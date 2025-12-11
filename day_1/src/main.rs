@@ -1,8 +1,10 @@
-use std::cmp::max;
 use std::fs;
 
+// const FILE_PATH = "assets/input.txt"
+const FILE_PATH: &str = "assets/mock.txt";
+
 fn main() {
-    let input = fs::read_to_string("assets/input.txt").expect("Failed to read input file");
+    let input = fs::read_to_string(FILE_PATH).expect("Failed to read input file");
 
     let mut position: i32 = 50;
     let mut zeros_count: i32 = 0;
@@ -18,19 +20,25 @@ fn main() {
 
         let rotation: i32 = line[1..].parse().unwrap();
 
-        if rotation >= 100 {
-            zeros_in_all_rotations += rotation / 100;
-        }
+        let mut zeros_passed = 0;
 
         match first {
             'L' => {
-                if position - rotation < 0 {
-                    zeros_in_all_rotations += 1;
+                let curr_pos = position - rotation;
+                if curr_pos < 0 {
+                    zeros_passed = curr_pos.div_euclid(100).abs();
+                    if position == 0 {
+                        zeros_passed -= 1;
+                    }
                 }
             }
             'R' => {
-                if position + rotation >= 100 {
-                    zeros_in_all_rotations += 1;
+                let curr_pos = position + rotation;
+                if curr_pos > 100 {
+                    zeros_passed = curr_pos / 100;
+                    if curr_pos.rem_euclid(100) == 0 {
+                        zeros_passed -= 1;
+                    }
                 }
             }
             _ => {}
@@ -40,10 +48,12 @@ fn main() {
 
         if position == 0 {
             zeros_count += 1;
-            zeros_in_all_rotations += 1;
+            zeros_passed += 1;
         }
+
+        zeros_in_all_rotations += zeros_passed;
     }
 
-    println!("{}", zeros_count);
-    println!("{}", zeros_in_all_rotations);
+    println!("1. {}", zeros_count);
+    println!("2. {}", zeros_in_all_rotations);
 }
