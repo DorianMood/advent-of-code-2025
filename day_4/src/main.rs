@@ -1,4 +1,4 @@
-use std::{cmp::min, fs, vec};
+use std::{cmp::max, cmp::min, collections::VecDeque, fs, vec};
 
 const FILE_PATH: &str = "assets/input.txt";
 // const FILE_PATH: &str = "assets/mock.txt";
@@ -53,7 +53,45 @@ fn main() {
     }
 
     println!("1. {}", num_cells_possible);
-    // println!("2. {}", max_number_from_digits_result);
+
+    // Part 2
+    let mut queue: VecDeque<(usize, usize)> = VecDeque::new();
+
+    for i in 0..rows {
+        for j in 0..cols {
+            if grid[i * cols + j] == 0 {
+                continue;
+            }
+            let count = count_nearby(&grid, rows, cols, i, j);
+
+            if count < 4 {
+                queue.push_back((i, j));
+            }
+        }
+    }
+
+    num_cells_possible = 0;
+    while let Some((i, j)) = queue.pop_front() {
+        if grid[i * cols + j] == 0 {
+            continue;
+        }
+        num_cells_possible += 1;
+        grid[i * cols + j] = 0;
+        for ii in i.saturating_sub(1)..=(i + 1).min(rows - 1) {
+            for jj in j.saturating_sub(1)..=(j + 1).min(cols - 1) {
+                if grid[ii * cols + jj] == 0 {
+                    continue;
+                }
+                let count = count_nearby(&grid, rows, cols, ii, jj);
+
+                if count < 4 {
+                    queue.push_back((ii, jj));
+                }
+            }
+        }
+    }
+
+    println!("2. {}", num_cells_possible);
 }
 
 /**
@@ -61,7 +99,6 @@ fn main() {
 * Aka Summed area table (SAT)
 **/
 fn make_sat(grid: &Vec<i64>, rows: usize, cols: usize) -> Vec<i64> {
-    // Используем i64 для предотвращения переполнения
     let prefix_cols = cols + 1;
     let mut prefix_diagram: Vec<i64> = vec![0; (rows + 1) * prefix_cols];
 
@@ -78,7 +115,6 @@ fn make_sat(grid: &Vec<i64>, rows: usize, cols: usize) -> Vec<i64> {
             let left_idx = i * prefix_cols + (j - 1); // SAT(i, j-1)
             let diag_idx = (i - 1) * prefix_cols + (j - 1); // SAT(i-1, j-1)
 
-            // 3. Применяем формулу (она верна)
             prefix_diagram[current_idx] =
                 grid_val + prefix_diagram[above_idx] + prefix_diagram[left_idx]
                     - prefix_diagram[diag_idx];
@@ -86,4 +122,24 @@ fn make_sat(grid: &Vec<i64>, rows: usize, cols: usize) -> Vec<i64> {
     }
 
     prefix_diagram
+}
+
+fn count_nearby(grid: &Vec<i64>, rows: usize, cols: usize, i: usize, j: usize) -> i64 {
+    let mut count = 0;
+
+    let r1 = i.saturating_sub(1);
+    let c1 = j.saturating_sub(1);
+    let r2 = (i + 1).min(rows - 1);
+    let c2 = (j + 1).min(cols - 1);
+
+    for r in r1..=r2 {
+        for c in c1..=c2 {
+            if r == i && c == j {
+                continue;
+            }
+            count += grid[r * cols + c];
+        }
+    }
+
+    count
 }
